@@ -29,7 +29,6 @@ public class LoadoutState : AState
 
 	[Header("Other Data")]
 	public Leaderboard leaderboard;
-    public MissionUI missionPopup;
 	public Button runButton;
 
     public GameObject tutorialBlocker;
@@ -58,7 +57,6 @@ public class LoadoutState : AState
         tutorialPrompt.SetActive(false);
 
         inventoryCanvas.gameObject.SetActive(true);
-        missionPopup.gameObject.SetActive(false);
 
         charNameDisplay.text = "";
         themeNameDisplay.text = "";
@@ -86,7 +84,6 @@ public class LoadoutState : AState
 
     public override void Exit(AState to)
     {
-        missionPopup.gameObject.SetActive(false);
         inventoryCanvas.gameObject.SetActive(false);
 
         if (m_Character != null) Addressables.ReleaseInstance(m_Character);
@@ -251,8 +248,6 @@ public class LoadoutState : AState
             }
         }
 
-        //GameManager.instance.SwitchState("Game");
-        print(manager.FindState("Game"));
         manager.SwitchState("Game");
     }
 

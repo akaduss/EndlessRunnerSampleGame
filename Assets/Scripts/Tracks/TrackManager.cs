@@ -95,7 +95,6 @@ public class TrackManager : MonoBehaviour
     protected bool m_IsMoving;
     protected float m_Speed;
 
-    protected float m_TimeSincePowerup;     // The higher it goes, the higher the chance of spawning one
     protected float m_TimeSinceLastPremium;
 
     protected int m_Multiplier;
@@ -235,8 +234,6 @@ public class TrackManager : MonoBehaviour
             m_SafeSegementLeft = m_IsTutorial ? 0 : k_StartingSafeSegments;
 
             Coin.coinPool = new Pooler(currentTheme.collectiblePrefab, k_StartingCoinPoolSize);
-
-            PlayerData.instance.StartRunMissions(this);
 
 #if UNITY_ANALYTICS
             AnalyticsEvent.GameStart(new Dictionary<string, object>
@@ -447,7 +444,6 @@ public class TrackManager : MonoBehaviour
 #endif
             }
 
-            PlayerData.instance.UpdateMissions(this);
         }
 
         MusicPlayer.instance.UpdateVolumes(speedRatio);

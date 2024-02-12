@@ -13,14 +13,35 @@ MonoBehaviour:
   m_Name: AddressableAssetSettings
   m_EditorClassIdentifier: 
   m_DefaultGroup: 0ee8914add8bf184eb2669a5f9b6f538
+  m_currentHash:
+    serializedVersion: 2
+    Hash: f6d3d4bf5d3ccd2f9c52b8f7e15320f0
+  m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 0
   m_BundleLocalCatalog: 0
+  m_CatalogRequestsTimeout: 0
   m_DisableCatalogUpdateOnStart: 0
+  m_IgnoreUnsupportedFilesInBuild: 0
   m_UniqueBundleIds: 0
+  m_NonRecursiveBuilding: 1
+  m_CCDEnabled: 0
+  m_maxConcurrentWebRequests: 3
+  m_ContiguousBundles: 1
+  m_StripUnityVersionFromBundleBuild: 0
+  m_DisableVisibleSubAssetRepresentations: 0
+  m_ShaderBundleNaming: 0
+  m_ShaderBundleCustomNaming: 
+  m_MonoScriptBundleNaming: 0
+  m_CheckForContentUpdateRestrictionsOption: 0
+  m_MonoScriptBundleCustomNaming: 
   m_RemoteCatalogBuildPath:
     m_Id: e2a85240a48a2184b9fe1ffd5c4ef06e
   m_RemoteCatalogLoadPath:
     m_Id: 2b8be43d6259b66479a487c5d62a5120
+  m_ContentStateBuildPathProfileVariableName: <default settings path>
+  m_CustomContentStateBuildPath: 
+  m_ContentStateBuildPath: 
+  m_BuildAddressablesWithPlayerBuild: 2
   m_overridePlayerVersion: 
   m_GroupAssets:
   - {fileID: 11400000, guid: 46a549cf223b965419395d1eb67697d5, type: 2}
@@ -28,7 +49,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d99611ab52ff789479179f6e24dde79d, type: 2}
   - {fileID: 11400000, guid: e6d74b33b2bb73b498a49b9344482f4b, type: 2}
   - {fileID: 11400000, guid: 509be79408e794b4eb1614a087f12f42, type: 2}
-  - {fileID: 11400000, guid: c4bc7133680d0814388173d245e6e7c2, type: 2}
   - {fileID: 11400000, guid: 10ae8408a953cd14e95d879ea1e28ec9, type: 2}
   - {fileID: 11400000, guid: 29cf561e1871fa543adc83369c628ce2, type: 2}
   - {fileID: 11400000, guid: fab46ba20057801419f1a975233c2cbd, type: 2}
@@ -102,3 +122,4 @@ MonoBehaviour:
     m_NextInstanceId: 3
     m_RegisteredServiceTypeRefs:
     - UnityEditor.AddressableAssets.HostingServices.HttpHostingService, Unity.Addressables.Editor
+    m_PingTimeoutInMilliseconds: 5000

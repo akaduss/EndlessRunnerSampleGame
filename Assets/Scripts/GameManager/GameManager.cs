@@ -46,7 +46,6 @@ public class GameManager : MonoBehaviour
     {
         if(m_StateStack.Count > 0)
         {
-            print(m_StateStack[^1].GetName());
             m_StateStack[^1].Tick();
         }
     }

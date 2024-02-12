@@ -36,8 +36,6 @@ public class CharacterInputController : MonoBehaviour
 
 	[Header("Sounds")]
 	public AudioClip slideSound;
-	public AudioClip powerUpUseSound;
-	public AudioSource powerupSource;
 
     [HideInInspector] public int currentTutorialLevel;
     [HideInInspector] public bool tutorialWaitingForValidation;

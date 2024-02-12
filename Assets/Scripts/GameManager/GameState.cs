@@ -26,7 +26,6 @@ public class GameState : AState
 	public Text distanceText;
     public Text multiplierText;
 	public Text countdownText;
-    public RectTransform powerupZone;
 	public RectTransform lifeRectTransform;
 
 	public RectTransform pauseMenu;
@@ -38,9 +37,6 @@ public class GameState : AState
     public GameObject gameOverPopup;
     public Button premiumForLifeButton;
     public Text premiumCurrencyOwned;
-
-    [Header("Prefabs")]
-    public GameObject PowerupIconPrefab;
 
     [Header("Tutorial")]
     public Text tutorialValidatedObstacles;
