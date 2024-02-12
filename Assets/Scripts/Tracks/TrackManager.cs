@@ -48,7 +48,6 @@ public class TrackManager : MonoBehaviour
     public bool invincible = false;
 
     [Header("Objects")]
-    public ConsumableDatabase consumableDatabase;
     public MeshFilter skyMeshFilter;
 
     [Header("Parallax")]
@@ -203,8 +202,6 @@ public class TrackManager : MonoBehaviour
             }
             Character player = op.Result.GetComponent<Character>();
 
-            player.SetupAccesory(PlayerData.instance.usedAccessory);
-
             characterController.character = player;
             characterController.trackManager = this;
 
@@ -245,8 +242,7 @@ public class TrackManager : MonoBehaviour
             AnalyticsEvent.GameStart(new Dictionary<string, object>
             {
                 { "theme", m_CurrentThemeData.themeName},
-                { "character", player.characterName },
-                { "accessory",  PlayerData.instance.usedAccessory >= 0 ? player.accessories[PlayerData.instance.usedAccessory].accessoryName : "none"}
+                { "character", player.characterName }
             });
 #endif
         }
@@ -272,8 +268,6 @@ public class TrackManager : MonoBehaviour
         m_Segments.Clear();
         m_PastSegments.Clear();
 
-        characterController.End();
-
         gameObject.SetActive(false);
         Addressables.ReleaseInstance(characterController.character.gameObject);
         characterController.character = null;
@@ -287,13 +281,6 @@ public class TrackManager : MonoBehaviour
         {
             _parallaxRootChildren--;
             Destroy(parallaxRoot.GetChild(i).gameObject);
-        }
-
-        //if our consumable wasn't used, we put it back in our inventory
-        if (characterController.inventory != null)
-        {
-            PlayerData.instance.Add(characterController.inventory.GetConsumableType());
-            characterController.inventory = null;
         }
     }
 
@@ -358,14 +345,12 @@ public class TrackManager : MonoBehaviour
             m_Segments.RemoveAt(0);
             _spawnedSegments--;
 
-            if (currentSegementChanged != null) currentSegementChanged.Invoke(m_Segments[0]);
+            currentSegementChanged?.Invoke(m_Segments[0]);
         }
 
-        Vector3 currentPos;
-        Quaternion currentRot;
         Transform characterTransform = characterController.transform;
 
-        m_Segments[0].GetPointAtInWorldUnit(m_CurrentSegmentDistance, out currentPos, out currentRot);
+        m_Segments[0].GetPointAtInWorldUnit(m_CurrentSegmentDistance, out Vector3 currentPos, out Quaternion currentRot);
 
 
         // Floating origin implementation
@@ -402,8 +387,7 @@ public class TrackManager : MonoBehaviour
             m_Segments[0].GetPointAtInWorldUnit(m_CurrentSegmentDistance, out currentPos, out currentRot);
         }
 
-        characterTransform.rotation = currentRot;
-        characterTransform.position = currentPos;
+        characterTransform.SetPositionAndRotation(currentPos, currentRot);
 
         if (parallaxRoot != null && currentTheme.cloudPrefabs.Length > 0)
         {
@@ -430,8 +414,6 @@ public class TrackManager : MonoBehaviour
                 i--;
             }
         }
-
-        PowerupSpawnUpdate();
 
         if (!m_IsTutorial)
         {
@@ -471,12 +453,6 @@ public class TrackManager : MonoBehaviour
         MusicPlayer.instance.UpdateVolumes(speedRatio);
     }
 
-    public void PowerupSpawnUpdate()
-    {
-        m_TimeSincePowerup += Time.deltaTime;
-        m_TimeSinceLastPremium += Time.deltaTime;
-    }
-
     public void ChangeZone()
     {
         m_CurrentZone += 1;
@@ -511,7 +487,7 @@ public class TrackManager : MonoBehaviour
         Quaternion currentExitRotation;
         if (m_Segments.Count > 0)
         {
-            m_Segments[m_Segments.Count - 1].GetPointAt(1.0f, out currentExitPoint, out currentExitRotation);
+            m_Segments[^1].GetPointAt(1.0f, out currentExitPoint, out currentExitRotation);
         }
         else
         {
@@ -521,9 +497,7 @@ public class TrackManager : MonoBehaviour
 
         newSegment.transform.rotation = currentExitRotation;
 
-        Vector3 entryPoint;
-        Quaternion entryRotation;
-        newSegment.GetPointAt(0.0f, out entryPoint, out entryRotation);
+        newSegment.GetPointAt(0.0f, out Vector3 entryPoint, out Quaternion entryRotation);
 
 
         Vector3 pos = currentExitPoint + (newSegment.transform.position - entryPoint);
@@ -542,7 +516,7 @@ public class TrackManager : MonoBehaviour
 
         m_Segments.Add(newSegment);
 
-        if (newSegmentCreated != null) newSegmentCreated.Invoke(newSegment);
+        newSegmentCreated?.Invoke(newSegment);
     }
 
 
@@ -580,15 +554,11 @@ public class TrackManager : MonoBehaviour
             const float increment = 1.5f;
             float currentWorldPos = 0.0f;
             int currentLane = Random.Range(0, 3);
-
-            float powerupChance = Mathf.Clamp01(Mathf.Floor(m_TimeSincePowerup) * 0.5f * 0.001f);
             float premiumChance = Mathf.Clamp01(Mathf.Floor(m_TimeSinceLastPremium) * 0.5f * 0.0001f);
 
             while (currentWorldPos < segment.worldLength)
             {
-                Vector3 pos;
-                Quaternion rot;
-                segment.GetPointAtInWorldUnit(currentWorldPos, out pos, out rot);
+                segment.GetPointAtInWorldUnit(currentWorldPos, out Vector3 pos, out Quaternion rot);
 
 
                 bool laneValid = true;
@@ -608,33 +578,11 @@ public class TrackManager : MonoBehaviour
 
                 if (laneValid)
                 {
-                    pos = pos + ((currentLane - 1) * laneOffset * (rot * Vector3.right));
+                    pos += ((currentLane - 1) * laneOffset * (rot * Vector3.right));
 
 
                     GameObject toUse = null;
-                    if (Random.value < powerupChance)
-                    {
-                        int picked = Random.Range(0, consumableDatabase.consumbales.Length);
-
-                        //if the powerup can't be spawned, we don't reset the time since powerup to continue to have a high chance of picking one next track segment
-                        if (consumableDatabase.consumbales[picked].canBeSpawned)
-                        {
-                            // Spawn a powerup instead.
-                            m_TimeSincePowerup = 0.0f;
-                            powerupChance = 0.0f;
-
-                            AsyncOperationHandle op = Addressables.InstantiateAsync(consumableDatabase.consumbales[picked].gameObject.name, pos, rot);
-                            yield return op;
-                            if (op.Result == null || !(op.Result is GameObject))
-                            {
-                                Debug.LogWarning(string.Format("Unable to load consumable {0}.", consumableDatabase.consumbales[picked].gameObject.name));
-                                yield break;
-                            }
-                            toUse = op.Result as GameObject;
-                            toUse.transform.SetParent(segment.transform, true);
-                        }
-                    }
-                    else if (Random.value < premiumChance)
+                    if (Random.value < premiumChance)
                     {
                         m_TimeSinceLastPremium = 0.0f;
                         premiumChance = 0.0f;

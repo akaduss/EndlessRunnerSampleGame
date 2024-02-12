@@ -59,7 +59,6 @@ public class CharacterCollider : MonoBehaviour
     protected const float k_MagnetSpeed = 10f;
     protected const int k_CoinsLayerIndex = 8;
     protected const int k_ObstacleLayerIndex = 9;
-    protected const int k_PowerupLayerIndex = 10;
     protected const float k_DefaultInvinsibleTime = 2f;
 
     protected void Start()
@@ -172,14 +171,6 @@ public class CharacterCollider : MonoBehaviour
 				m_DeathData.worldDistance = controller.trackManager.worldDistance;
 
 			}
-        }
-        else if(c.gameObject.layer == k_PowerupLayerIndex)
-        {
-            Consumable consumable = c.GetComponent<Consumable>();
-            if(consumable != null)
-            {
-                controller.UseConsumable(consumable);
-            }
         }
     }
 

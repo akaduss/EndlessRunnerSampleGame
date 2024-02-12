@@ -1,13 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
-#if UNITY_ADS
-using UnityEngine.Advertisements;
-#endif
 #if UNITY_ANALYTICS
 using UnityEngine.Analytics;
 #endif
@@ -43,7 +37,6 @@ public class GameState : AState
 
     public GameObject gameOverPopup;
     public Button premiumForLifeButton;
-    public GameObject adsForLifeButton;
     public Text premiumCurrencyOwned;
 
     [Header("Prefabs")]
@@ -58,21 +51,13 @@ public class GameState : AState
 
     public Modifier currentModifier = new Modifier();
 
-    public string adsPlacementId = "rewardedVideo";
-#if UNITY_ANALYTICS
-    public AdvertisingNetwork adsNetwork = AdvertisingNetwork.UnityAds;
-#endif
-    public bool adsRewarded = true;
-
     protected bool m_Finished;
     protected float m_TimeSinceStart;
-    protected List<PowerupIcon> m_PowerupIcons = new List<PowerupIcon>();
 	protected Image[] m_LifeHearts;
 
     protected RectTransform m_CountdownRectTransform;
     protected bool m_WasMoving;
 
-    protected bool m_AdsInitialised = false;
     protected bool m_GameoverSelectionDone = false;
 
     protected int k_MaxLives = 3;
@@ -101,7 +86,6 @@ public class GameState : AState
             CoroutineHandler.StartStaticCoroutine(MusicPlayer.instance.RestartAllStems());
         }
 
-        m_AdsInitialised = false;
         m_GameoverSelectionDone = false;
 
         StartGame();
@@ -110,8 +94,6 @@ public class GameState : AState
     public override void Exit(AState to)
     {
         canvas.gameObject.SetActive(false);
-
-        ClearPowerup();
     }
 
     public void StartGame()
@@ -170,7 +152,6 @@ public class GameState : AState
         }
 
         m_Finished = false;
-        m_PowerupIcons.Clear();
 
         StartCoroutine(trackManager.Begin());
     }
@@ -184,26 +165,6 @@ public class GameState : AState
     {
         if (m_Finished)
         {
-            //if we are finished, we check if advertisement is ready, allow to disable the button until it is ready
-#if UNITY_ADS
-            if (!trackManager.isTutorial && !m_AdsInitialised && Advertisement.IsReady(adsPlacementId))
-            {
-                adsForLifeButton.SetActive(true);
-                m_AdsInitialised = true;
-#if UNITY_ANALYTICS
-                AnalyticsEvent.AdOffer(adsRewarded, adsNetwork, adsPlacementId, new Dictionary<string, object>
-            {
-                { "level_index", PlayerData.instance.rank },
-                { "distance", TrackManager.instance == null ? 0 : TrackManager.instance.worldDistance },
-            });
-#endif
-            }
-            else if(trackManager.isTutorial || !m_AdsInitialised)
-                adsForLifeButton.SetActive(false);
-#else
-            adsForLifeButton.SetActive(false); //Ads is disabled
-#endif
-
             return;
         }
 
@@ -212,63 +173,6 @@ public class GameState : AState
             CharacterInputController chrCtrl = trackManager.characterController;
 
             m_TimeSinceStart += Time.deltaTime;
-
-            if (chrCtrl.currentLife <= 0)
-            {
-                pauseButton.gameObject.SetActive(false);
-                chrCtrl.CleanConsumable();
-                chrCtrl.character.animator.SetBool(s_DeadHash, true);
-                chrCtrl.characterCollider.koParticle.gameObject.SetActive(true);
-                StartCoroutine(WaitForGameOver());
-            }
-
-            // Consumable ticking & lifetime management
-            List<Consumable> toRemove = new List<Consumable>();
-            List<PowerupIcon> toRemoveIcon = new List<PowerupIcon>();
-
-            for (int i = 0; i < chrCtrl.consumables.Count; ++i)
-            {
-                PowerupIcon icon = null;
-                for (int j = 0; j < m_PowerupIcons.Count; ++j)
-                {
-                    if (m_PowerupIcons[j].linkedConsumable == chrCtrl.consumables[i])
-                    {
-                        icon = m_PowerupIcons[j];
-                        break;
-                    }
-                }
-
-                chrCtrl.consumables[i].Tick(chrCtrl);
-                if (!chrCtrl.consumables[i].active)
-                {
-                    toRemove.Add(chrCtrl.consumables[i]);
-                    toRemoveIcon.Add(icon);
-                }
-                else if (icon == null)
-                {
-                    // If there's no icon for the active consumable, create it!
-                    GameObject o = Instantiate(PowerupIconPrefab);
-
-                    icon = o.GetComponent<PowerupIcon>();
-
-                    icon.linkedConsumable = chrCtrl.consumables[i];
-                    icon.transform.SetParent(powerupZone, false);
-
-                    m_PowerupIcons.Add(icon);
-                }
-            }
-
-            for (int i = 0; i < toRemove.Count; ++i)
-            {
-                toRemove[i].Ended(trackManager.characterController);
-
-                Addressables.ReleaseInstance(toRemove[i].gameObject);
-                if (toRemoveIcon[i] != null)
-                   Destroy(toRemoveIcon[i].gameObject);
-
-                chrCtrl.consumables.Remove(toRemove[i]);
-                m_PowerupIcons.Remove(toRemoveIcon[i]);
-            }
 
             if (m_IsTutorial)
                 TutorialCheckObstacleClear();
@@ -363,15 +267,6 @@ public class GameState : AState
 		{
 			m_CountdownRectTransform.localScale = Vector3.zero;
 		}
-
-        // Consumable
-        if (trackManager.characterController.inventory != null)
-        {
-            inventoryIcon.transform.parent.gameObject.SetActive(true);
-            inventoryIcon.sprite = trackManager.characterController.inventory.icon;
-        }
-        else
-            inventoryIcon.transform.parent.gameObject.SetActive(false);
     }
 
 	IEnumerator WaitForGameOver()
@@ -392,26 +287,11 @@ public class GameState : AState
         }
 	}
 
-    protected void ClearPowerup()
-    {
-        for (int i = 0; i < m_PowerupIcons.Count; ++i)
-        {
-            if (m_PowerupIcons[i] != null)
-                Destroy(m_PowerupIcons[i].gameObject);
-        }
-
-        trackManager.characterController.powerupSource.Stop();
-
-        m_PowerupIcons.Clear();
-    }
-
     public void OpenGameOverPopup()
     {
         premiumForLifeButton.interactable = PlayerData.instance.premium >= 3;
 
         premiumCurrencyOwned.text = PlayerData.instance.premium.ToString();
-
-        ClearPowerup();
 
         gameOverPopup.SetActive(true);
     }
@@ -446,71 +326,6 @@ public class GameState : AState
         trackManager.isRerun = true;
         StartGame();
     }
-
-    public void ShowRewardedAd()
-    {
-        if (m_GameoverSelectionDone)
-            return;
-
-        m_GameoverSelectionDone = true;
-
-#if UNITY_ADS
-        if (Advertisement.IsReady(adsPlacementId))
-        {
-#if UNITY_ANALYTICS
-            AnalyticsEvent.AdStart(adsRewarded, adsNetwork, adsPlacementId, new Dictionary<string, object>
-            {
-                { "level_index", PlayerData.instance.rank },
-                { "distance", TrackManager.instance == null ? 0 : TrackManager.instance.worldDistance },
-            });
-#endif
-            var options = new ShowOptions { resultCallback = HandleShowResult };
-            Advertisement.Show(adsPlacementId, options);
-        }
-        else
-        {
-#if UNITY_ANALYTICS
-            AnalyticsEvent.AdSkip(adsRewarded, adsNetwork, adsPlacementId, new Dictionary<string, object> {
-                { "error", Advertisement.GetPlacementState(adsPlacementId).ToString() }
-            });
-#endif
-        }
-#else
-		GameOver();
-#endif
-    }
-
-    //=== AD
-#if UNITY_ADS
-
-    private void HandleShowResult(ShowResult result)
-    {
-        switch (result)
-        {
-            case ShowResult.Finished:
-#if UNITY_ANALYTICS
-                AnalyticsEvent.AdComplete(adsRewarded, adsNetwork, adsPlacementId);
-#endif
-                SecondWind();
-                break;
-            case ShowResult.Skipped:
-                Debug.Log("The ad was skipped before reaching the end.");
-#if UNITY_ANALYTICS
-                AnalyticsEvent.AdSkip(adsRewarded, adsNetwork, adsPlacementId);
-#endif
-                break;
-            case ShowResult.Failed:
-                Debug.LogError("The ad failed to be shown.");
-#if UNITY_ANALYTICS
-                AnalyticsEvent.AdSkip(adsRewarded, adsNetwork, adsPlacementId, new Dictionary<string, object> {
-                    { "error", "failed" }
-                });
-#endif
-                break;
-        }
-    }
-#endif
-
 
     void TutorialCheckObstacleClear()
     {
@@ -590,7 +405,6 @@ public class GameState : AState
                 break;
         }
     }
-
 
     public void FinishTutorial()
     {

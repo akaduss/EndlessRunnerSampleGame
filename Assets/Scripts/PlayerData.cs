@@ -34,12 +34,9 @@ public class PlayerData
 
     public int coins;
     public int premium;
-    public Dictionary<Consumable.ConsumableType, int> consumables = new Dictionary<Consumable.ConsumableType, int>();   // Inventory of owned consumables and quantity.
 
     public List<string> characters = new List<string>();    // Inventory of characters owned.
     public int usedCharacter;                               // Currently equipped character.
-    public int usedAccessory = -1;
-    public List<string> characterAccessories = new List<string>();  // List of owned accessories, in the form "charName:accessoryName".
     public List<string> themes = new List<string>();                // Owned themes.
     public int usedTheme;                                           // Currently used theme.
     public List<HighscoreEntry> highscores = new List<HighscoreEntry>();
@@ -63,31 +60,6 @@ public class PlayerData
     // Then would increment again with every subsequent patches. We kept it to its dev value here for teaching purpose. 
     static int s_Version = 12; 
 
-    public void Consume(Consumable.ConsumableType type)
-    {
-        if (!consumables.ContainsKey(type))
-            return;
-
-        consumables[type] -= 1;
-        if(consumables[type] == 0)
-        {
-            consumables.Remove(type);
-        }
-
-        Save();
-    }
-
-    public void Add(Consumable.ConsumableType type)
-    {
-        if (!consumables.ContainsKey(type))
-        {
-            consumables[type] = 0;
-        }
-
-        consumables[type] += 1;
-
-        Save();
-    }
 
     public void AddCharacter(string name)
     {
@@ -97,11 +69,6 @@ public class PlayerData
     public void AddTheme(string theme)
     {
         themes.Add(theme);
-    }
-
-    public void AddAccessory(string name)
-    {
-        characterAccessories.Add(name);
     }
 
     // Mission management
@@ -234,12 +201,9 @@ public class PlayerData
 		m_Instance.characters.Clear();
 		m_Instance.themes.Clear();
 		m_Instance.missions.Clear();
-		m_Instance.characterAccessories.Clear();
-		m_Instance.consumables.Clear();
 
 		m_Instance.usedCharacter = 0;
 		m_Instance.usedTheme = 0;
-		m_Instance.usedAccessory = -1;
 
         m_Instance.coins = 0;
         m_Instance.premium = 0;
@@ -257,7 +221,7 @@ public class PlayerData
 
     public void Read()
     {
-        BinaryReader r = new BinaryReader(new FileStream(saveFile, FileMode.Open));
+        BinaryReader r = new(new FileStream(saveFile, FileMode.Open));
 
         int ver = r.ReadInt32();
 
@@ -271,13 +235,6 @@ public class PlayerData
 		}
 
         coins = r.ReadInt32();
-
-        consumables.Clear();
-        int consumableCount = r.ReadInt32();
-        for (int i = 0; i < consumableCount; ++i)
-        {
-            consumables.Add((Consumable.ConsumableType)r.ReadInt32(), r.ReadInt32());
-        }
 
         // Read character.
         characters.Clear();
@@ -295,14 +252,6 @@ public class PlayerData
         }
 
         usedCharacter = r.ReadInt32();
-
-        // Read character accesories.
-        characterAccessories.Clear();
-        int accCount = r.ReadInt32();
-        for (int i = 0; i < accCount; ++i)
-        {
-            characterAccessories.Add(r.ReadString());
-        }
 
         // Read Themes.
         themes.Clear();
@@ -394,13 +343,6 @@ public class PlayerData
         w.Write(s_Version);
         w.Write(coins);
 
-        w.Write(consumables.Count);
-        foreach(KeyValuePair<Consumable.ConsumableType, int> p in consumables)
-        {
-            w.Write((int)p.Key);
-            w.Write(p.Value);
-        }
-
         // Write characters.
         w.Write(characters.Count);
         foreach (string c in characters)
@@ -409,12 +351,6 @@ public class PlayerData
         }
 
         w.Write(usedCharacter);
-
-        w.Write(characterAccessories.Count);
-        foreach (string a in characterAccessories)
-        {
-            w.Write(a);
-        }
 
         // Write themes.
         w.Write(themes.Count);
@@ -480,20 +416,5 @@ public class PlayerDataEditor : Editor
         PlayerData.instance.Save();
     }
 
-    [MenuItem("Trash Dash Debug/Give 10 Consumables of each types")]
-    static public void AddConsumables()
-    {
-       
-        for(int i = 0; i < ShopItemList.s_ConsumablesTypes.Length; ++i)
-        {
-            Consumable c = ConsumableDatabase.GetConsumbale(ShopItemList.s_ConsumablesTypes[i]);
-            if(c != null)
-            {
-                PlayerData.instance.consumables[c.GetConsumableType()] = 10;
-            }
-        }
-
-        PlayerData.instance.Save();
-    }
 }
 #endif

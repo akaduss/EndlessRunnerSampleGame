@@ -13,9 +13,8 @@ public class GameManager : MonoBehaviour
     static protected GameManager s_Instance;
 
     public AState[] states;
-    public AState topState {  get { if (m_StateStack.Count == 0) return null; return m_StateStack[m_StateStack.Count - 1]; } }
+    public AState topState {  get { if (m_StateStack.Count == 0) return null; return m_StateStack[^1]; } }
 
-    public ConsumableDatabase m_ConsumableDatabase;
 
     protected List<AState> m_StateStack = new List<AState>();
     protected Dictionary<string, AState> m_StateDict = new Dictionary<string, AState>();
@@ -25,8 +24,6 @@ public class GameManager : MonoBehaviour
         PlayerData.Create();
 
         s_Instance = this;
-
-        m_ConsumableDatabase.Load();
 
         // We build a dictionnary from state for easy switching using their name.
         m_StateDict.Clear();
@@ -49,7 +46,8 @@ public class GameManager : MonoBehaviour
     {
         if(m_StateStack.Count > 0)
         {
-            m_StateStack[m_StateStack.Count - 1].Tick();
+            print(m_StateStack[^1].GetName());
+            m_StateStack[^1].Tick();
         }
     }
 
@@ -78,8 +76,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        m_StateStack[m_StateStack.Count - 1].Exit(state);
-        state.Enter(m_StateStack[m_StateStack.Count - 1]);
+        m_StateStack[^1].Exit(state);
+        state.Enter(m_StateStack[^1]);
         m_StateStack.RemoveAt(m_StateStack.Count - 1);
         m_StateStack.Add(state);
     }
@@ -103,8 +101,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        m_StateStack[m_StateStack.Count - 1].Exit(m_StateStack[m_StateStack.Count - 2]);
-        m_StateStack[m_StateStack.Count - 2].Enter(m_StateStack[m_StateStack.Count - 2]);
+        m_StateStack[^1].Exit(m_StateStack[^2]);
+        m_StateStack[^2].Enter(m_StateStack[^2]);
         m_StateStack.RemoveAt(m_StateStack.Count - 1);
     }
 
@@ -119,8 +117,8 @@ public class GameManager : MonoBehaviour
 
         if (m_StateStack.Count > 0)
         {
-            m_StateStack[m_StateStack.Count - 1].Exit(state);
-            state.Enter(m_StateStack[m_StateStack.Count - 1]);
+            m_StateStack[^1].Exit(state);
+            state.Enter(m_StateStack[^1]);
         }
         else
         {

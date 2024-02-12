@@ -70,12 +70,6 @@ public class GameOverState : AState
 		fullLeaderboard.Open();
     }
 
-	public void GoToStore()
-    {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("shop", UnityEngine.SceneManagement.LoadSceneMode.Additive);
-    }
-
-
     public void GoToLoadout()
     {
         trackManager.isRerun = false;

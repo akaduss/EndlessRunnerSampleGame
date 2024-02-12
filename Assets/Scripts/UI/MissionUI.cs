@@ -40,9 +40,6 @@ public class MissionUI : MonoBehaviour
                     Debug.LogWarning(string.Format("Unable to load button {0}.", addMissionButtonPrefab.Asset.name));
                     yield break;
                 }
-                AdsForMission obj = (op.Result as GameObject)?.GetComponent<AdsForMission>();
-                obj.missionUI = this;
-                obj.transform.SetParent(missionPlace, false);
             }
         }
     }
